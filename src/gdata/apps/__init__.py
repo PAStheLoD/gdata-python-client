@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 #
 # Copyright (C) 2007 SIOS Technology, Inc.
 #

@@ -21,7 +21,7 @@
 
 import sys
 import getpass
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import gdata.gauth
 
 __author__ = 'j.s@google.com (Jeff Scudder)'
@@ -30,7 +30,6 @@ __author__ = 'j.s@google.com (Jeff Scudder)'
 CLIENT_LOGIN = 1
 AUTHSUB = 2
 OAUTH = 3
-OAUTH2 = 4
 
 HMAC = 1
 RSA = 2
@@ -53,7 +52,7 @@ class SettingsUtil(object):
      return self.prefs[name]
     # Second, check for a command line parameter.
     value = None
-    for i in xrange(len(sys.argv)):
+    for i in range(len(sys.argv)):
       if sys.argv[i].startswith('--%s=' % name):
         value = sys.argv[i].split('=')[1]
       elif sys.argv[i] == '--%s' % name:
@@ -65,7 +64,7 @@ class SettingsUtil(object):
       if secret:
         value = getpass.getpass(prompt)
       else:
-        value = raw_input(prompt)
+        value = eval(input(prompt))
     # If we want to save the preference for reuse in future requests, add it
     # to this object's prefs.
     if value is not None and reuse:
@@ -82,13 +81,12 @@ class SettingsUtil(object):
       auth_type = int(self.get_param(
           'auth_type', 'Please choose the authorization mechanism you want'
           ' to use.\n'
-          '1. [deprecated] to use your email address and password (ClientLogin)\n'
-          '2. [deprecated] to use a web browser to visit an auth web page (AuthSub)\n'
-          '3. [deprecated] if you have registed to use OAuth\n'
-          '4. if you have registed to use OAuth 2.0\n', reuse=True))
+          '1. to use your email address and password (ClientLogin)\n'
+          '2. to use a web browser to visit an auth web page (AuthSub)\n'
+          '3. if you have registed to use OAuth\n', reuse=True))
 
     # Get the scopes for the services we want to access.
-    if auth_type == AUTHSUB or auth_type == OAUTH or auth_type == OAUTH2:
+    if auth_type == AUTHSUB or auth_type == OAUTH:
       if scopes is None:
         scopes = self.get_param(
             'scopes', 'Enter the URL prefixes (scopes) for the resources you '
@@ -96,7 +94,7 @@ class SettingsUtil(object):
             'between each URL.\n'
             'Example: http://www.google.com/calendar/feeds/,'
             'http://www.google.com/m8/feeds/\n', reuse=True).split(',')
-      elif isinstance(scopes, (str, unicode)):
+      elif isinstance(scopes, str):
         scopes = scopes.split(',')
 
     if auth_type == CLIENT_LOGIN:
@@ -131,7 +129,7 @@ class SettingsUtil(object):
           private_key = private_key_file.read()
           private_key_file.close()
         except IOError:
-          print 'Unable to read private key from file'
+          print('Unable to read private key from file')
 
       if private_key is not None:
         if client.auth_token is None:
@@ -151,7 +149,7 @@ class SettingsUtil(object):
 
         auth_url = gdata.gauth.generate_auth_sub_url(
             'http://gauthmachine.appspot.com/authsub', scopes, True)
-        print 'with a private key, get ready for this URL', auth_url
+        print(('with a private key, get ready for this URL', auth_url))
 
       else:
         if client.auth_token is None:
@@ -172,12 +170,12 @@ class SettingsUtil(object):
           auth_url = gdata.gauth.generate_auth_sub_url(
               'http://gauthmachine.appspot.com/authsub', scopes)
 
-      print 'Visit the following URL in your browser to authorize this app:'
-      print str(auth_url)
-      print 'After agreeing to authorize the app, copy the token value from'
-      print ' the URL. Example: "www.google.com/?token=ab12" token value is'
-      print ' ab12'
-      token_value = raw_input('Please enter the token value: ')
+      print('Visit the following URL in your browser to authorize this app:')
+      print((str(auth_url)))
+      print('After agreeing to authorize the app, copy the token value from')
+      print(' the URL. Example: "www.google.com/?token=ab12" token value is')
+      print(' ab12')
+      token_value = eval(input('Please enter the token value: '))
       if private_key is not None:
         single_use_token = gdata.gauth.SecureAuthSubToken(
             token_value, private_key, scopes)
@@ -221,56 +219,26 @@ class SettingsUtil(object):
           private_key = private_key_file.read()
           private_key_file.close()
         except IOError:
-          print 'Unable to read private key from file'
+          print('Unable to read private key from file')
 
         request_token = client.get_oauth_token(
             scopes, 'http://gauthmachine.appspot.com/oauth', consumer_key,
             rsa_private_key=private_key)
       else:
-        print 'Invalid OAuth signature type'
+        print('Invalid OAuth signature type')
         return None
 
       # Authorize the request token in the browser.
-      print 'Visit the following URL in your browser to authorize this app:'
-      print str(request_token.generate_authorization_url())
-      print 'After agreeing to authorize the app, copy URL from the browser\'s'
-      print ' address bar.'
-      url = raw_input('Please enter the url: ')
+      print('Visit the following URL in your browser to authorize this app:')
+      print((str(request_token.generate_authorization_url())))
+      print('After agreeing to authorize the app, copy URL from the browser\'s')
+      print(' address bar.')
+      url = eval(input('Please enter the url: '))
       gdata.gauth.authorize_request_token(request_token, url)
       # Exchange for an access token.
       client.auth_token = client.get_access_token(request_token)
-    elif auth_type == OAUTH2:
-      oauth_type = HMAC
-
-      client_id = self.get_param(
-          'client_id', 'Please enter your OAuth 2.0 Client ID '
-          'which identifies your app', reuse=True)
-
-      if oauth_type == HMAC:
-        client_secret = self.get_param(
-            'client_secret', 'Please enter your OAuth 2.0 Client secret '
-            'which you share with the OAuth provider',
-            True, reuse=False)
-
-        # Create a request token.
-        request_token = gdata.gauth.OAuth2Token(
-            client_id = client_id, client_secret = client_secret,
-            scope = " ".join(scopes), # http://stackoverflow.com/a/8451199/198219
-            user_agent = 'GdataPythonClientExample')
-      else:
-        print 'Invalid OAuth signature type'
-        return None
-
-      # Authorize the request token in the browser.
-      print '\nVisit the following URL in your browser '\
-        'to authorize this app:\n\n{0}\n'.format(
-          str(request_token.generate_authorize_url()))
-
-      code = raw_input('What is the verification code? ').strip()
-      request_token.get_access_token(code)
-      client.auth_token = request_token
     else:
-      print 'Invalid authorization type.'
+      print('Invalid authorization type.')
       return None
     if client.auth_token:
       self.prefs['client_auth_token'] = gdata.gauth.token_to_blob(
@@ -297,5 +265,5 @@ def authorize_client(client, auth_type=None, service=None, source=None,
 def print_options():
   """Displays usage information, available command line params."""
   # TODO: fill in the usage description for authorizing the client.
-  print ''
+  print('')
 

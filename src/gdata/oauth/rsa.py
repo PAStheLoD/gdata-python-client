@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 """
 requires tlslite - http://trevp.net/tlslite/
@@ -7,7 +7,14 @@ requires tlslite - http://trevp.net/tlslite/
 
 import binascii
 
-from tlslite.utils import keyfactory
+try:
+  from gdata.tlslite.utils import keyfactory
+except ImportError:
+  from tlslite.tlslite.utils import keyfactory
+try:
+  from gdata.tlslite.utils import cryptomath
+except ImportError:
+  from tlslite.tlslite.utils import cryptomath
 
 # XXX andy: ugly local import due to module name, oauth.oauth
 import gdata.oauth as oauth
