@@ -18,14 +18,19 @@
 import sys
 from distutils.core import setup
 
-required = ['pycrypto', 'tlslite']
+# required = ['pycrypto', 'tlslite']
+# just let it die slowly, and use
+#  *  tlslite-ng==0.8.0-alpha1
+#  *  pycryptodome
+# as both work with py3.6
+required = []
 
 if sys.version_info[:3] < (2, 5, 0):
   required.append('elementtree')
 
 setup(
     name='gdata',
-    version='2.0.18',
+    version='2.0.18.1',
     description='Python client library for Google data APIs',
     long_description = """\
 The Google data Python client library makes it easy to interact with
