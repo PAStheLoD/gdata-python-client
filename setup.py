@@ -16,7 +16,7 @@
 
 
 import sys
-from distutils.core import setup
+from setuptools import setup
 
 # required = ['pycrypto', 'tlslite']
 # just let it die slowly, and use
