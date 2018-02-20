@@ -18,12 +18,10 @@
 import sys
 from setuptools import setup
 
-# required = ['pycrypto', 'tlslite']
-# just let it die slowly, and use
-#  *  tlslite-ng==0.8.0-alpha1
-#  *  pycryptodome
-# as both work with py3.6
-required = []
+required = [
+  'pycryptodome',
+  'tlslite-ng==0.8.0-alpha1'
+]
 
 if sys.version_info[:3] < (2, 5, 0):
   required.append('elementtree')
